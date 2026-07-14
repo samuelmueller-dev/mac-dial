@@ -8,6 +8,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     var statusBarController: StatusBarController?
     let dial = Dial()
+    let modeManager = ModeManager()
+    let radialMenu = RadialMenuController()
+    var inputDispatcher: InputDispatcher?
+    var profileManager: ProfileManager?
     
     func requestPermissions() {
         // More information on this behaviour: https://stackoverflow.com/questions/29006379/accessibility-permissions-reset-after-application-update
@@ -26,8 +30,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         requestPermissions()
+        inputDispatcher = InputDispatcher(dial: dial, modeManager: modeManager, radialMenu: radialMenu)
+        let profileManager = ProfileManager(modeManager: modeManager)
+        self.profileManager = profileManager
+        statusBarController = StatusBarController.init(dial, modeManager: modeManager, profileManager: profileManager)
         dial.start();
-        statusBarController = StatusBarController.init(dial)
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
