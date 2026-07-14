@@ -367,8 +367,8 @@
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/lib/hidapi/build/src/mac";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_LDFLAGS = "-lhidapi";
-				PRODUCT_BUNDLE_IDENTIFIER = com.andreasjhkarlsson.MacDial;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.samuelmueller.Detent;
+				PRODUCT_NAME = Detent;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/MacDial/MacDial-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
@@ -394,8 +394,8 @@
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(SRCROOT)/lib/hidapi/build_x86/src/mac";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_LDFLAGS = "-lhidapi";
-				PRODUCT_BUNDLE_IDENTIFIER = com.andreasjhkarlsson.MacDial;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.samuelmueller.Detent;
+				PRODUCT_NAME = Detent;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/MacDial/MacDial-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};

@@ -192,7 +192,7 @@ class StatusBarController: NSObject, NSMenuDelegate
 
         menu.minimumWidth = 260
 
-        let titleItem = NSMenuItem.init(title: "Mac Dial")
+        let titleItem = NSMenuItem.init(title: "Detent")
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.boldSystemFont(ofSize: 0)
         ]

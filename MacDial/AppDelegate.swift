@@ -19,7 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let alert = NSAlert()
             alert.messageText = "App permissions"
             alert.alertStyle = NSAlert.Style.informational
-            alert.informativeText = "Mac Dial needs Accessibility permissions to work. In the next dialog you will be asked to open the Settings app to enable the permissions.\nIMPORTANT! Due to an issue in macOS, if you're upgrading from an earlier version of Mac Dial you might have to remove Mac Dial from the accessibility permissions and then restart the app to re-add the permissions."
+            alert.informativeText = "Detent needs Accessibility permissions to work. In the next dialog you will be asked to open the Settings app to enable the permissions.\nIMPORTANT! Due to an issue in macOS, if you're upgrading from an earlier version of Detent you might have to remove Detent from the accessibility permissions and then restart the app to re-add the permissions."
             alert.runModal()
         }
         

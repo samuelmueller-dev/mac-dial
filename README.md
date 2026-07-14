@@ -1,14 +1,31 @@
-# Mac Dial
+# Detent
 
-macOS support for the Surface Dial. The surface dial can be paired with macOS but any input results in invalid mouse inputs on macOS. This app reads the raw data from the dial and translates them to correct mouse and media inputs for macOS.
+Powerful macOS support for the Microsoft Surface Dial. The Surface Dial can be paired with macOS over Bluetooth, but its input registers as invalid mouse events. Detent reads the raw HID data from the dial and turns it into scrolling, media, brightness, zoom and more — plus a radial mode menu, per-app profiles, keyboard-modifier bindings, a tap gesture, and smooth trackpad-style scrolling.
 
-## Building
+Detent is a substantially extended fork of [andreasjhkarlsson/mac-dial](https://github.com/andreasjhkarlsson/mac-dial). It is free and open source.
 
-Make sure to clone the hidapi submodule and build the library using the build_hidapi.sh script. Note: This app depends on a hidapi fork, check the submodule to see what changed. App should then build with XCode.
+## Install
 
-Note: with CMake 4.x the hidapi fork needs a compatibility flag; pass `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` to the cmake invocations in build_hidapi.sh.
+Download the latest `Detent.app` from [Releases](../../releases), move it to your Applications folder, and launch it. Grant Accessibility permission when prompted (System Settings → Privacy & Security → Accessibility) — this is required to synthesize input. Detent lives in the menu bar; add it to your Login Items to start it at boot.
 
-You can find universal builds of the app under "releases". Note that these builds can be outdated.
+The binary is a universal build (Apple Silicon + Intel). It is not notarized, so on first launch you may need to right-click the app and choose *Open*, or allow it under System Settings → Privacy & Security.
+
+## Building from source
+
+Clone with submodules, build the bundled hidapi fork, then build the app with Xcode:
+
+```sh
+git clone --recursive https://github.com/samuelmueller-dev/detent.git
+cd detent
+./build_hidapi.sh
+```
+
+Note: with CMake 4.x the hidapi fork needs a compatibility flag — pass `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` to the cmake invocations in `build_hidapi.sh` (or use the copy in this repo, which already does). Then open `MacDial.xcodeproj` and build, or from the command line:
+
+```sh
+xcodebuild -project MacDial.xcodeproj -scheme MacDial -configuration Release \
+  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build CODE_SIGN_IDENTITY="-"
+```
 
 ## Usage
 
@@ -45,7 +62,7 @@ Press and **hold** the dial for half a second: a radial menu pops up around your
 
 Each segment change gives a haptic tick. The menu dismisses itself after 4 seconds of inactivity, or immediately on **Esc**. Besides the modes, the menu has a **Tap: On/Off** segment for quickly disabling the tap gesture if it gets annoying.
 
-Modes can also be changed by clicking the Mac Dial icon in the system menu bar.
+Modes can also be changed by clicking the Detent icon in the system menu bar.
 
 ### Modifier bindings
 
@@ -60,7 +77,7 @@ Each switch gives a haptic tick. Bindings are defined in `ModifierBindings.swift
 
 You can pin a mode to an application so the dial switches automatically when that app comes to the foreground (e.g. Undo/Redo in your editor, Playback everywhere else):
 
-1. Focus the app you care about, then click the Mac Dial menu bar icon.
+1. Focus the app you care about, then click the Detent menu bar icon.
 2. Make sure the mode you want is active, then choose *Per-App Profiles → Pin '<mode>' to <app>*.
 3. To remove a pin, click its entry in the *Per-App Profiles* submenu.
 
