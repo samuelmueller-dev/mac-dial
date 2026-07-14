@@ -23,6 +23,7 @@
 		C8AA0000000000000000000A /* InputDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8AA00000000000000000009 /* InputDispatcher.swift */; };
 		C8AA0000000000000000000C /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8AA0000000000000000000B /* ProfileManager.swift */; };
 		C8AA0000000000000000000E /* ModifierBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8AA0000000000000000000D /* ModifierBindings.swift */; };
+		C8AA00000000000000000010 /* TapDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8AA0000000000000000000F /* TapDetector.swift */; };
 		C89F315B2701266400A8B365 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C89F315A2701266400A8B365 /* CoreFoundation.framework */; };
 		C89F315D2701266A00A8B365 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C89F315C2701266A00A8B365 /* IOKit.framework */; };
 		C89F315F270126E100A8B365 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C89F315E270126E100A8B365 /* AppKit.framework */; };
@@ -49,6 +50,7 @@
 		C8AA00000000000000000009 /* InputDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputDispatcher.swift; sourceTree = "<group>"; };
 		C8AA0000000000000000000B /* ProfileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManager.swift; sourceTree = "<group>"; };
 		C8AA0000000000000000000D /* ModifierBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModifierBindings.swift; sourceTree = "<group>"; };
+		C8AA0000000000000000000F /* TapDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDetector.swift; sourceTree = "<group>"; };
 		C89F315A2701266400A8B365 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		C89F315C2701266A00A8B365 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		C89F315E270126E100A8B365 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -107,6 +109,7 @@
 				C8AA00000000000000000009 /* InputDispatcher.swift */,
 				C8AA0000000000000000000B /* ProfileManager.swift */,
 				C8AA0000000000000000000D /* ModifierBindings.swift */,
+				C8AA0000000000000000000F /* TapDetector.swift */,
 			);
 			path = MacDial;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				C8AA0000000000000000000A /* InputDispatcher.swift in Sources */,
 				C8AA0000000000000000000C /* ProfileManager.swift in Sources */,
 				C8AA0000000000000000000E /* ModifierBindings.swift in Sources */,
+				C8AA00000000000000000010 /* TapDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

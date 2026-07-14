@@ -59,11 +59,16 @@ class StatusBarController: NSObject, NSMenuDelegate
     private let dial: Dial
     private let modeManager: ModeManager
     private let profileManager: ProfileManager
+    private let dispatcher: InputDispatcher
 
     private let connectionStatusItem = NSMenuItem.init()
     private var modeItems: [MenuOptionItem<Mode>] = []
     private let profilesItem = NSMenuItem.init(title: "Per-App Profiles")
     private let profilesMenu = NSMenu.init()
+    private let smoothScrollingItem = NSMenuItem.init(title: "Smooth Scrolling")
+    private let tapActionOptions = TapAction.allCases.map {
+        MenuOptionItem<TapAction>.init(title: $0.title, option: $0)
+    }
 
     private let wheelSensitivityOptions = [
         MenuOptionItem<WheelSensitivity>.init(title: "Low", option: .low),
@@ -86,15 +91,16 @@ class StatusBarController: NSObject, NSMenuDelegate
             return WheelSensitivity(rawValue: raw)
         }
         set (sensitivity) {
+            // Detents per revolution, synthesized from the 3600-step raw stream
             switch sensitivity {
             case .low:
-                dial.wheelSensitivity = 18
+                dispatcher.rawPerDetent = Dial.stepsPerRevolution / 18
             case .medium:
-                dial.wheelSensitivity = 36
+                dispatcher.rawPerDetent = Dial.stepsPerRevolution / 36
             case .high:
-                dial.wheelSensitivity = 72
+                dispatcher.rawPerDetent = Dial.stepsPerRevolution / 72
             case .extreme:
-                dial.wheelSensitivity = 360
+                dispatcher.rawPerDetent = Dial.stepsPerRevolution / 360
             case .none:
                 break
             }
@@ -136,9 +142,9 @@ class StatusBarController: NSObject, NSMenuDelegate
         set (hapticsModeSet) {
             switch hapticsModeSet {
             case .disabled:
-                dial.haptics = false
+                dial.hapticsEnabled = false
             case .enabled:
-                dial.haptics = true
+                dial.hapticsEnabled = true
             case .none:
                 break
             }
@@ -150,13 +156,36 @@ class StatusBarController: NSObject, NSMenuDelegate
         }
     }
 
-    init(_ dial: Dial, modeManager: ModeManager, profileManager: ProfileManager) {
+    var smoothScrolling: Bool {
+        get {
+            return UserDefaults.standard.object(forKey: "smoothscroll") as? Bool ?? true
+        }
+        set (enabled) {
+            dispatcher.smoothScrolling = enabled
+            smoothScrollingItem.state = enabled ? .on : .off
+            UserDefaults.standard.setValue(enabled, forKey: "smoothscroll")
+        }
+    }
+
+    // Persistence and change notification live in the dispatcher, since the
+    // radial menu's tap toggle also changes this setting
+    var tapAction: TapAction {
+        get {
+            return dispatcher.tapAction
+        }
+        set (action) {
+            dispatcher.tapAction = action
+        }
+    }
+
+    init(_ dial: Dial, modeManager: ModeManager, profileManager: ProfileManager, dispatcher: InputDispatcher) {
         self.dial = dial
         self.modeManager = modeManager
         self.profileManager = profileManager
+        self.dispatcher = dispatcher
         self.menu = NSMenu.init()
 
-        statusBar = NSStatusBar.init()
+        statusBar = NSStatusBar.system
         statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
 
         super.init()
@@ -220,6 +249,27 @@ class StatusBarController: NSObject, NSMenuDelegate
         }
         menu.addItem(hapticsItem)
         hapticsMode = hapticsMode // trigger set which updates dial
+
+        smoothScrollingItem.target = self
+        smoothScrollingItem.action = #selector(toggleSmoothScrolling(sender:))
+        menu.addItem(smoothScrollingItem)
+        smoothScrolling = smoothScrolling // trigger set which updates dispatcher
+
+        let tapActionItem = NSMenuItem.init(title: "Tap Gesture")
+        tapActionItem.submenu = NSMenu.init()
+        for option in tapActionOptions {
+            option.target = self
+            option.action = #selector(setTapAction(sender:))
+            tapActionItem.submenu?.addItem(option)
+        }
+        menu.addItem(tapActionItem)
+        dispatcher.onTapActionChanged = { [weak self] action in
+            guard let self = self else { return }
+            for option in self.tapActionOptions {
+                option.selected = option.option == action
+            }
+        }
+        tapAction = tapAction // trigger change notification to set checkmarks
 
         menu.addItem(NSMenuItem.separator())
 
@@ -296,9 +346,16 @@ class StatusBarController: NSObject, NSMenuDelegate
 
     private func updateIcon() {
         if let button = statusItem.button {
-            button.image = modeManager.currentMode.image
-            button.image?.size = NSSize(width: 18, height: 18)
-            button.imagePosition = .imageLeft
+            if let image = modeManager.currentMode.image {
+                button.image = image
+                button.image?.size = NSSize(width: 18, height: 18)
+                button.imagePosition = .imageLeft
+                button.title = ""
+            } else {
+                // Never leave the status item invisible
+                button.image = nil
+                button.title = "Dial"
+            }
         }
     }
 
@@ -331,6 +388,15 @@ class StatusBarController: NSObject, NSMenuDelegate
     @objc func setHaptics(sender: AnyObject) {
         let item = sender as! NSMenuItem
         hapticsMode = (item.representedObject as! HapticsMode)
+    }
+
+    @objc func toggleSmoothScrolling(sender: AnyObject) {
+        smoothScrolling = !smoothScrolling
+    }
+
+    @objc func setTapAction(sender: AnyObject) {
+        let item = sender as! MenuOptionItem<TapAction>
+        tapAction = item.option
     }
 
     @objc func quitApp(sender: AnyObject) {

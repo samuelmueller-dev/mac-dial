@@ -18,11 +18,19 @@ The app will continously try to open any Surface Dial connected to the computer 
 
 The app supports five modes:
 
-* **Scroll mode**: Turning the dial scrolls. Pressing the dial is interpreted as a mouse click at the current cursor position. Press-and-turn drags while scrolling.
+* **Scroll mode**: Turning the dial scrolls — by default as smooth, trackpad-style per-pixel scrolling (toggle *Smooth Scrolling* in the menu for classic line-by-line). Pressing the dial is interpreted as a mouse click at the current cursor position. Press-and-turn drags while scrolling.
 * **Playback mode**: Turning the dial controls the system volume. Pressing the dial plays / pauses any current playback while a double click sends the "next" media action.
 * **Brightness mode**: Turning the dial adjusts display brightness.
 * **Zoom mode**: Turning the dial zooms in / out (sends ⌘+ / ⌘−). Pressing the dial resets zoom (⌘0).
 * **Undo / Redo mode**: Turning the dial counterclockwise scrubs through undo history (⌘Z), clockwise redoes (⇧⌘Z). Great for creative apps.
+
+### Tap gesture
+
+The dial has no accelerometer, but the app runs the encoder at its maximum hardware resolution (3600 steps/rev) and detects the tiny jitter burst a physical **tap** produces — pick the puck up and tap it against your desk, your screen, anything. The gesture is **off by default** (firm presses can occasionally read as taps); enable it under *Tap Gesture* in the menu bar or via the *Tap* segment of the radial menu. Available actions: Spotlight (⌘Space, the default when enabled), radial menu, focus window under cursor, or Mission Control.
+
+Notes: setting the dial down or picking it up reads as a tap too (that's physics — embrace it or set the action to something low-key). Firm taps that mechanically actuate the button are recognized and folded into the tap instead of triggering a click. Because detents are now synthesized in software, wheel sensitivity and haptic ticks behave exactly as before.
+
+To keep taps and pickups from leaking stray rotation at this resolution, rotation starting from rest is briefly buffered until it accumulates enough net movement to be clearly intentional (~4°, reached almost instantly at normal turning speed), then flushed in full — so slow deliberate turns lose nothing, while tap jitter is silently dropped.
 
 ### Triple click to focus a window
 
@@ -35,7 +43,7 @@ Press and **hold** the dial for half a second: a radial menu pops up around your
 * keep holding, turn to highlight a mode, and release to select it, or
 * release first, turn to highlight, and press once to select.
 
-Each segment change gives a haptic tick. The menu dismisses itself after 4 seconds of inactivity.
+Each segment change gives a haptic tick. The menu dismisses itself after 4 seconds of inactivity, or immediately on **Esc**. Besides the modes, the menu has a **Tap: On/Off** segment for quickly disabling the tap gesture if it gets annoying.
 
 Modes can also be changed by clicking the Mac Dial icon in the system menu bar.
 

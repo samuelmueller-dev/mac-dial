@@ -26,9 +26,15 @@ class Dial
     
     enum InputReport
     {
-        case dial(ButtonState, Rotation?)
+        // Raw signed encoder steps at 3600 steps/revolution (0 = no rotation)
+        case dial(ButtonState, Int)
         case unknown
     }
+
+    // The dial is always run at its maximum hardware resolution; detents are
+    // synthesized in software so that physical taps (which only jiggle the
+    // encoder a few steps) remain observable.
+    static let stepsPerRevolution = 3600
     
     class Device
     {
@@ -47,14 +53,10 @@ class Dial
         private var dev: OpaquePointer?
         private let readBuffer = ReadBuffer(size: 1024)
         
-        var wheelSensivitity = 36
-        
         var scrollDirection = 1
-        
-        var haptics = false
-        
+
         init() {
-            
+
         }
         
         var isConnected: Bool {
@@ -106,20 +108,22 @@ class Dial
         }
         
         // https://github.com/daniel5151/surface-dial-linux/blob/main/src/dial_device/haptics.rs
-        func updateSensitivity() {
+        // Always max resolution; hardware auto-haptics stay off (3600 buzzes
+        // per revolution would be unusable) — ticks are sent manually per
+        // synthesized detent via impact().
+        func configure() {
             if isConnected {
-                let steps_lo = wheelSensivitity & 0xff;
-                let steps_hi = (wheelSensivitity >> 8) & 0xff;
+                let steps = Dial.stepsPerRevolution
                 var buf: Array<UInt8> = []
                 buf.append(1)
-                buf.append(UInt8(steps_lo)) // steps
-                buf.append(UInt8(steps_hi)) // steps
+                buf.append(UInt8(steps & 0xff)) // steps
+                buf.append(UInt8((steps >> 8) & 0xff)) // steps
                 buf.append(0x00) // Repeat Count
-                buf.append(self.haptics ? 0x03 : 0x02) // auto trigger
+                buf.append(0x02) // auto trigger off
                 buf.append(0x00) // Waveform Cutoff Time
                 buf.append(0x00) // retrigger period
                 buf.append(0x00) // retrigger period
-                
+
                 hid_send_feature_report(dev, buf, 8)
             }
         }
@@ -139,20 +143,13 @@ class Dial
         private func parse(bytes: UnsafeMutableBufferPointer<UInt8>) -> InputReport {
             switch bytes[0] {
             case 1 where bytes.count >= 4:
-                
+
                 let buttonState = bytes[1]&1 == 1 ? ButtonState.pressed : .released
-                
-                let rotation = { () -> Rotation? in
-                    switch bytes[2] {
-                        case 1:
-                            return .Clockwise(1)
-                        case 0xff:
-                            return .CounterClockwise(1)
-                        default:
-                            return nil
-                }}()
-                
-                return .dial(buttonState, rotation)
+
+                // Rotation is a signed 16-bit little-endian delta in raw steps
+                let delta = Int(Int16(bitPattern: UInt16(bytes[2]) | (UInt16(bytes[3]) << 8)))
+
+                return .dial(buttonState, delta)
             default:
                 return .unknown
             }
@@ -186,39 +183,22 @@ class Dial
     let device = Device()
     private let semaphore = DispatchSemaphore(value: 0)
     private var lastButtonState = ButtonState.released
-    
+
     var onButtonStateChanged: ((ButtonState) -> Void)?
-    var onRotation: ((Rotation, Int) -> Void)?
-    
-    var wheelSensitivity: Int {
-        get {
-            return device.wheelSensivitity
-        }
-        
-        set (value) {
-            device.wheelSensivitity = value
-            device.updateSensitivity()
-        }
-    }
-    
+    // Raw signed encoder steps (3600/rev) + scroll direction
+    var onRotation: ((Int, Int) -> Void)?
+
+    // Software haptic ticks per synthesized detent (hardware auto-buzz is
+    // permanently off at high resolution)
+    var hapticsEnabled = false
+
     var scrollDirection: Int {
         get {
             return device.scrollDirection
         }
-        
+
         set (value) {
             device.scrollDirection = value
-        }
-    }
-    
-    var haptics: Bool {
-        get {
-            return device.haptics
-        }
-        
-        set (value) {
-            device.haptics = value
-            device.updateSensitivity()
         }
     }
     
@@ -239,8 +219,6 @@ class Dial
     }
     
     func stop() {
-        self.haptics = false
-        self.wheelSensitivity = 36
         run = false;
         if let thread = self.thread {
             semaphore.signal()
@@ -277,7 +255,7 @@ class Dial
                 print("Trying to open device...")
                 if device.connect() {
                     print("Device \(device.serialNumber) opened.")
-                    device.updateSensitivity() // thanks @bernhard-adobe
+                    device.configure() // thanks @bernhard-adobe
                 } else {
                     print("Device couldn't be opened.")
                 }
@@ -286,9 +264,9 @@ class Dial
             while device.isConnected {
                 
                 switch device.read() {
-                
-                case .dial(let buttonState, let rotation):
-                    
+
+                case .dial(let buttonState, let delta):
+
                     switch buttonState {
                     case .pressed where lastButtonState == .released:
                         onButtonStateChanged?(.pressed)
@@ -296,11 +274,11 @@ class Dial
                         onButtonStateChanged?(.released)
                     default: break
                     }
-                    
-                    if rotation != nil {
-                        onRotation?(rotation!, scrollDirection)
+
+                    if delta != 0 {
+                        onRotation?(delta, scrollDirection)
                     }
-                    
+
                     self.lastButtonState = buttonState
                 
                 case .unknown:

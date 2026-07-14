@@ -30,10 +30,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         requestPermissions()
-        inputDispatcher = InputDispatcher(dial: dial, modeManager: modeManager, radialMenu: radialMenu)
+        let inputDispatcher = InputDispatcher(dial: dial, modeManager: modeManager, radialMenu: radialMenu)
+        self.inputDispatcher = inputDispatcher
         let profileManager = ProfileManager(modeManager: modeManager)
         self.profileManager = profileManager
-        statusBarController = StatusBarController.init(dial, modeManager: modeManager, profileManager: profileManager)
+        statusBarController = StatusBarController.init(dial, modeManager: modeManager, profileManager: profileManager, dispatcher: inputDispatcher)
         dial.start();
     }
 

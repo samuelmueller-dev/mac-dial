@@ -2,9 +2,21 @@
 import Foundation
 import AppKit
 
+// What selecting a radial menu segment does
+enum RadialAction {
+    case mode(Mode)
+    case toggleTap
+}
+
+struct RadialMenuItem {
+    let title: String
+    let symbolName: String
+    let action: RadialAction
+}
+
 class RadialMenuView: NSView {
 
-    var modes: [Mode] = []
+    var items: [RadialMenuItem] = []
     var highlightedIndex: Int = 0 {
         didSet { needsDisplay = true }
     }
@@ -13,8 +25,8 @@ class RadialMenuView: NSView {
     private let innerRadius: CGFloat = 44
     private let iconSize: CGFloat = 30
 
-    private func tintedIcon(for mode: Mode, color: NSColor) -> NSImage? {
-        guard let symbol = NSImage(systemSymbolName: mode.symbolName, accessibilityDescription: mode.title)?
+    private func tintedIcon(for item: RadialMenuItem, color: NSColor) -> NSImage? {
+        guard let symbol = NSImage(systemSymbolName: item.symbolName, accessibilityDescription: item.title)?
             .withSymbolConfiguration(.init(pointSize: iconSize, weight: .medium)) else {
             return nil
         }
@@ -31,15 +43,15 @@ class RadialMenuView: NSView {
     // Mid-angle of segment i in AppKit degrees (counterclockwise from +x).
     // Segment 0 sits at the top, segments advance clockwise.
     private func midAngle(_ index: Int) -> CGFloat {
-        let span = 360.0 / CGFloat(modes.count)
+        let span = 360.0 / CGFloat(items.count)
         return 90.0 - CGFloat(index) * span
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        guard !modes.isEmpty else { return }
+        guard !items.isEmpty else { return }
 
         let center = NSPoint(x: bounds.midX, y: bounds.midY)
-        let span = 360.0 / CGFloat(modes.count)
+        let span = 360.0 / CGFloat(items.count)
 
         let disc = NSBezierPath()
         disc.appendArc(withCenter: center, radius: outerRadius, startAngle: 0, endAngle: 360)
@@ -58,7 +70,7 @@ class RadialMenuView: NSView {
 
         // Segment separators
         NSColor(calibratedWhite: 1.0, alpha: 0.15).setStroke()
-        for i in 0..<modes.count {
+        for i in 0..<items.count {
             let angle = (midAngle(i) + span / 2) * .pi / 180
             let line = NSBezierPath()
             line.move(to: NSPoint(x: center.x + cos(angle) * innerRadius,
@@ -83,16 +95,16 @@ class RadialMenuView: NSView {
 
         // Icons
         let iconRadius = (outerRadius + innerRadius) / 2
-        for (i, mode) in modes.enumerated() {
-            guard let icon = tintedIcon(for: mode, color: .white) else { continue }
+        for (i, item) in items.enumerated() {
+            guard let icon = tintedIcon(for: item, color: .white) else { continue }
             let angle = midAngle(i) * .pi / 180
             let pos = NSPoint(x: center.x + cos(angle) * iconRadius - icon.size.width / 2,
                               y: center.y + sin(angle) * iconRadius - icon.size.height / 2)
             icon.draw(in: NSRect(origin: pos, size: icon.size))
         }
 
-        // Highlighted mode title in the hub
-        let title = modes[highlightedIndex].title
+        // Highlighted item title in the hub
+        let title = items[highlightedIndex].title
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
             .foregroundColor: NSColor.white
@@ -110,26 +122,26 @@ class RadialMenuController {
     private var view: RadialMenuView?
     private var accumulatedSteps = 0
 
-    // Detents needed to move the highlight by one segment
-    private let stepsPerSegment = 2
+    // Raw encoder steps (3600/rev) to move the highlight by one segment: 30°
+    private let stepsPerSegment = 300
 
     var isVisible: Bool {
         return panel?.isVisible ?? false
     }
 
-    var highlightedMode: Mode? {
-        guard let view = view, !view.modes.isEmpty else { return nil }
-        return view.modes[view.highlightedIndex]
+    var highlightedItem: RadialMenuItem? {
+        guard let view = view, !view.items.isEmpty else { return nil }
+        return view.items[view.highlightedIndex]
     }
 
-    func show(modes: [Mode], current: Mode) {
+    func show(items: [RadialMenuItem], highlightedIndex: Int) {
         hide(animated: false)
         accumulatedSteps = 0
 
         let size = NSSize(width: 280, height: 280)
         let menuView = RadialMenuView(frame: NSRect(origin: .zero, size: size))
-        menuView.modes = modes
-        menuView.highlightedIndex = modes.firstIndex(of: current) ?? 0
+        menuView.items = items
+        menuView.highlightedIndex = min(max(highlightedIndex, 0), items.count - 1)
 
         let panel = NSPanel(contentRect: NSRect(origin: .zero, size: size),
                             styleMask: [.borderless, .nonactivatingPanel],
@@ -167,13 +179,13 @@ class RadialMenuController {
 
     // Returns true if the highlight moved (used for haptic ticks)
     func rotate(_ delta: Int) -> Bool {
-        guard let view = view, !view.modes.isEmpty else { return false }
+        guard let view = view, !view.items.isEmpty else { return false }
 
         accumulatedSteps += delta
         var moved = false
         while abs(accumulatedSteps) >= stepsPerSegment {
             let direction = accumulatedSteps > 0 ? 1 : -1
-            let count = view.modes.count
+            let count = view.items.count
             view.highlightedIndex = (view.highlightedIndex + direction + count) % count
             accumulatedSteps -= direction * stepsPerSegment
             moved = true

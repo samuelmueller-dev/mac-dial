@@ -30,13 +30,24 @@ class ModifierBindings {
         self.hapticTick = hapticTick
     }
 
-    // Returns true if the rotation was consumed by a modifier binding
+    // Pure check: is a bound modifier combo currently held?
+    var isComboHeld: Bool {
+        let current = NSEvent.modifierFlags.intersection([.shift, .command, .option, .control])
+        return bindings.contains { $0.modifiers == current }
+    }
+
+    // Reset accumulation when rotation happens with no combo held
+    func noteInactive() {
+        activeModifiers = []
+        accumulatedSteps = 0
+    }
+
+    // Returns true if the rotation (in detents) was consumed by a binding
     func handle(steps: Int) -> Bool {
         let current = NSEvent.modifierFlags.intersection([.shift, .command, .option, .control])
 
         guard let binding = bindings.first(where: { $0.modifiers == current }) else {
-            activeModifiers = []
-            accumulatedSteps = 0
+            noteInactive()
             return false
         }
 
