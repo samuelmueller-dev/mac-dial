@@ -19,6 +19,7 @@ class InputDispatcher {
     private let dial: Dial
     private let modeManager: ModeManager
     private let radialMenu: RadialMenuController
+    private var modifierBindings: ModifierBindings!
 
     private var state = State.idle
     private var longPressTimer: Timer?
@@ -27,10 +28,16 @@ class InputDispatcher {
     private let longPressDelay: TimeInterval = 0.5
     private let menuTimeout: TimeInterval = 4.0
 
+    private var clickCount = 0
+    private var lastClickTime: TimeInterval = 0
+
     init(dial: Dial, modeManager: ModeManager, radialMenu: RadialMenuController) {
         self.dial = dial
         self.modeManager = modeManager
         self.radialMenu = radialMenu
+        self.modifierBindings = ModifierBindings { [weak dial] in
+            dial?.device.impact()
+        }
 
         dial.onButtonStateChanged = { [weak self] buttonState in
             DispatchQueue.main.async {
@@ -69,10 +76,13 @@ class InputDispatcher {
         switch state {
         case .pressed(let downForwarded):
             cancelLongPressTimer()
-            if !downForwarded {
-                modeManager.currentController.onDown()
+            if downForwarded {
+                // Was a press-drag; the onDown already fired when rotation began
+                modeManager.currentController.onUp()
+                clickCount = 0
+            } else {
+                registerClick()
             }
-            modeManager.currentController.onUp()
             state = .idle
         case .longPressed(let rotated):
             if rotated {
@@ -93,6 +103,9 @@ class InputDispatcher {
     private func handleRotation(_ rotation: Dial.Rotation, _ scrollDirection: Int) {
         switch state {
         case .idle:
+            if modifierBindings.handle(steps: steps(of: rotation)) {
+                return
+            }
             modeManager.currentController.onRotate(rotation, scrollDirection)
         case .pressed(let downForwarded):
             // Rotating while pressed is a press-drag, not a long press
@@ -122,6 +135,28 @@ class InputDispatcher {
         state = .longPressed(rotated: false)
         radialMenu.show(modes: modeManager.modes, current: modeManager.currentMode)
         dial.device.impact(repeatCount: 2)
+    }
+
+    // Counts rapid clicks. Single/double clicks fire the active mode's action
+    // immediately (no added latency); a triple click instead injects a real
+    // mouse click at the cursor to give the window under it scroll focus.
+    private func registerClick() {
+        let now = Date().timeIntervalSince1970
+        if now - lastClickTime < NSEvent.doubleClickInterval {
+            clickCount += 1
+        } else {
+            clickCount = 1
+        }
+        lastClickTime = now
+
+        if clickCount >= 3 {
+            clickCount = 0
+            postLeftClickAtCursor()
+            dial.device.impact()
+        } else {
+            modeManager.currentController.onDown()
+            modeManager.currentController.onUp()
+        }
     }
 
     private func selectHighlightedMode() {

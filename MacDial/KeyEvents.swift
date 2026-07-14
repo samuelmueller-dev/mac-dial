@@ -36,6 +36,21 @@ func HIDPostAuxKey(key: Int32, modifiers: [NSEvent.ModifierFlags], _repeat: Int 
     }
 }
 
+// Posts a real left mouse click at the current cursor position. Used to give
+// keyboard/scroll focus to the window under the pointer — some apps (e.g.
+// Firefox) ignore synthetic scroll events until a real click lands in them.
+func postLeftClickAtCursor() {
+    let mousePos = NSEvent.mouseLocation
+    let screenHeight = NSScreen.main?.frame.height ?? 0
+    let point = NSPoint(x: mousePos.x, y: screenHeight - mousePos.y)
+
+    let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)
+    down?.post(tap: .cghidEventTap)
+
+    let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left)
+    up?.post(tap: .cghidEventTap)
+}
+
 func postKeystroke(_ keyCode: Int, flags: CGEventFlags = [], _repeat: Int = 1) {
     for _ in 0..<_repeat {
         let down = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)

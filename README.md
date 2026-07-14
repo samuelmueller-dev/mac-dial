@@ -24,6 +24,10 @@ The app supports five modes:
 * **Zoom mode**: Turning the dial zooms in / out (sends ⌘+ / ⌘−). Pressing the dial resets zoom (⌘0).
 * **Undo / Redo mode**: Turning the dial counterclockwise scrubs through undo history (⌘Z), clockwise redoes (⇧⌘Z). Great for creative apps.
 
+### Triple click to focus a window
+
+**Triple-click** the dial to inject a real mouse click at the cursor. This gives keyboard/scroll focus to the window under the pointer without moving your hand to the mouse. It's useful after switching apps or spaces: some apps (notably Firefox) ignore synthetic scroll events until a genuine click has landed inside their content area, so a quick triple-click primes the window and rotation starts scrolling immediately. Works in any mode.
+
 ### Radial menu (mode switching on the dial)
 
 Press and **hold** the dial for half a second: a radial menu pops up around your cursor, replicating the Surface Dial on-screen menu from Windows. Then either:
@@ -34,6 +38,15 @@ Press and **hold** the dial for half a second: a radial menu pops up around your
 Each segment change gives a haptic tick. The menu dismisses itself after 4 seconds of inactivity.
 
 Modes can also be changed by clicking the Mac Dial icon in the system menu bar.
+
+### Modifier bindings
+
+Holding a keyboard modifier changes what rotation does, regardless of the active mode:
+
+* **⇧ Shift + rotate**: cycle through open applications.
+* **⌘⇧ Cmd+Shift + rotate**: switch desktops/spaces (uses the default Mission Control ^← / ^→ shortcuts — these must be enabled in *System Settings → Keyboard → Shortcuts → Mission Control*).
+
+Each switch gives a haptic tick. Bindings are defined in `ModifierBindings.swift` and are easy to extend with additional combos.
 
 ### Per-app profiles
 
